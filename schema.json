@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Colorado-Mesh/mesh-channels/blob/main/schema.json",
+  "title": "Mesh Community Information Schema",
+  "description": "A schema for the unified directory of community information for local mesh networks, including Meshtastic and MeshCore",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "nullableString": {
+      "id": "#/definitions/nullableString",
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A string that can also be null"
+    },
+    "positiveNumber": {
+      "id": "#/definitions/positiveNumber",
+      "type": "number",
+      "description": "A positive number (greater than 0)",
+      "exclusiveMinimum": 0
+    },
+    "geocoordinate": {
+      "id": "#/definitions/geocoordinate",
+      "type": "number",
+      "description": "A geographic coordinate, either latitude or longitude",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "timestamp": {
+      "id": "#/definitions/timestamp",
+      "type": "integer",
+      "description": "Unix timestamp representing a point in time"
+    },
+    "meshtastic_mqtt_topic": {
+      "id": "#/definitions/meshtastic_mqtt_topic",
+      "type": "string",
+      "description": "An MQTT topic string, following Meshtastic convention (e.g. msh/US/CO/#)",
+      "pattern": "^msh/.*/#$"
+    },
+    "meshtastic_channel": {
+      "id": "#/definitions/meshtastic_channel",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the Meshtastic channel"
+        },
+        "psk": {
+          "type": "string",
+          "description": "Pre-shared key for the channel, encoded in base64"
+        },
+        "modem_preset": {
+          "description": "Modem preset for the channel",
+          "enum": [
+            "LONG_FAST",
+            "MEDIUM_FAST",
+            "SHORT_FAST",
+            "LONG_SLOW",
+            "MEDIUM_SLOW",
+            "SHORT_SLOW",
+            "SHORT_TURBO",
+            "LONG_MODERATE"
+          ]
+        },
+        "hw_region": {
+          "description": "Hardware region for the channel (e.g. US915, EU868)",
+          "enum": [
+            "US915",
+            "EU868",
+            "AU915"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "description": "Description of the channel's purpose and usage"
+        }
+      },
+      "required": [
+        "name",
+        "psk",
+        "modem_preset",
+        "hw_region",
+        "summary"
+      ]
+    },
+    "meshcore_region_code": {
+      "id": "#/definitions/meshcore_region_code",
+      "type": "string",
+      "description": "Short code for the region used in MeshCore repeater configurations. This can be used to restrict repeaters to only traffic from specified regions"
+    },
+    "meshcore_public_channel": {
+      "id": "#/definitions/meshcore_public_channel",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the MeshCore channel"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^#.*$",
+          "description": "A MeshCore channel code, which is a public channel prefixed with a pound sign (#)"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Description of the MeshCore channel's purpose and usage"
+        }
+      },
+      "description": "A public MeshCore channel."
+    },
+    "region": {
+      "id": "#/definitions/region",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the region"
+        },
+        "code": {
+          "type": "string",
+          "description": "Short code for the region"
+        },
+        "geo": {
+          "type": "object",
+          "properties": {
+            "latitude": {
+              "type": "#/definitions/geocoordinate",
+              "description": "Latitude of the region's center point"
+            },
+            "longitude": {
+              "type": "#/definitions/geocoordinate",
+              "description": "Longitude of the region's center point"
+            },
+            "radius_km": {
+              "type": "#/definitions/positiveNumber",
+              "description": "Radius of the region in kilometers, defining a circular area around the center point"
+            }
+          },
+          "description": "Geographical information about the region, used for mapping and spatial queries"
+        },
+        "meshtastic_mqtt_topics": {
+          "type": "array",
+          "items": {
+            "type": "#/definitions/meshtastic_mqtt_topic"
+          },
+          "description": "MQTT topics associated with this region"
+        },
+        "meshtastic_channels": {
+          "type": "array",
+          "items": {
+            "type": "#/definitions/meshtastic_channel"
+          },
+          "description": "Meshtastic channels associated with this region."
+        },
+        "meshcore_region_code": {
+          "type": "#/definitions/meshcore_region_code",
+          "description": "Short code for the region used in MeshCore channel codes (e.g. 'co' for Colorado, which would be used in a MeshCore channel code like #co-weather)"
+        },
+        "meshcore_public_channels": {
+          "type": "array",
+          "items": {
+            "type": "#/definitions/meshcore_public_channel"
+          },
+          "description": "Public MeshCore channels associated with this region."
+        },
+        "sub_regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/region"
+          },
+          "description": "Nested sub-regions within this region. This can represent, e.g. cities within a county, or neighborhoods within a city."
+        }
+      },
+      "required": [
+        "name",
+        "geo",
+        "meshtastic_mqtt_topics",
+        "meshtastic_channels",
+        "meshcore_public_channels"
+      ]
+    },
+    "country": {
+      "id": "#/definitions/country",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the country"
+        },
+        "code": {
+          "type": "string",
+          "description": "Short code for the country (e.g. US)"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/region"
+          },
+          "description": "Array of regions within the country."
+        }
+      },
+      "required": [
+        "name",
+        "regions"
+      ]
+    },
+    "meshcore_node_id": {
+      "id": "#/definitions/meshcore_node_id",
+      "type": "string",
+      "description": "First 2 bytes of the MeshCore node public key",
+      "pattern": "^[a-fA-F0-9]{4}$"
+    },
+    "meshcore_node_public_key": {
+      "id": "#/definitions/meshcore_node_public_key",
+      "type": "string",
+      "description": "Public key for the MeshCore node",
+      "pattern": "^[a-fA-F0-9]{32}$"
+    },
+    "meshcore_contact_uri": {
+      "id": "#/definitions/meshcore_contact_uri",
+      "type": "string",
+      "description": "A MeshCore contact URI for the node, which can be used to add the node as a contact in MeshCore (e.g. 'meshcore://contact/add?name=NodeName&public_key=0100...&type=2')",
+      "pattern": "^meshcore://contact/add\\?name=.*&public_key=[a-fA-F0-9]{32}&type=[0-4]$"
+    },
+    "meshcore_node": {
+      "id": "#/definitions/meshcore_node",
+      "type": "object",
+      "properties": {
+        "$comment": "The properties 'type' and 'id' should also be here",
+        "id": {
+          "type": "#/definitions/meshcore_node_id",
+          "description": "First 2 bytes of the MeshCore node public key, used as a short identifier for the node (e.g. '0100')"
+        },
+        "public_key": {
+          "type": "#/definitions/meshcore_node_public_key",
+          "description": "Public key for the MeshCore node"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the MeshCore node, e.g. 'Downtown Repeater'"
+        },
+        "node_type": {
+          "description": "Type of MeshCore node",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "created_at": {
+          "type": "#/definitions/timestamp",
+          "description": "When the node was created"
+        },
+        "last_heard": {
+          "type": "#/definitions/timestamp",
+          "description": "When the node was last heard from"
+        },
+        "owner": {
+          "type": "#/definitions/nullableString",
+          "description": "Contact information for the owner of the node, if available (e.g. an email address or social media handle)"
+        },
+        "latitude": {
+          "type": "#/definitions/geocoordinate",
+          "description": "Latitude of the node's location"
+        },
+        "longitude": {
+          "type": "#/definitions/geocoordinate",
+          "description": "Longitude of the node's location"
+        },
+        "status": {
+          "description": "Status of the node",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "contact": {
+          "type": "#/definitions/meshcore_contact_uri",
+          "description": "A MeshCore contact URI for the node, which can be used to add the node as a contact in MeshCore (e.g. 'meshcore://contact/add?name=NodeName&public_key=0100...&type=2')"
+        },
+        "params": {
+          "type": "object",
+          "description": "Additional parameters for the node, which can include any extra information not covered by the other properties. This is a free-form object that can contain any key-value pairs relevant to the node."
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "#/definitions/meshcore_region_code"
+          },
+          "description": "List of region codes that this node is associated with. This can be used to link the node to specific regions defined in the directory, and can also be used for filtering nodes by region."
+        }
+      },
+      "required": [
+        "id",
+        "public_key",
+        "name",
+        "node_type",
+        "created_at",
+        "last_heard",
+        "latitude",
+        "longitude",
+        "status",
+        "contact"
+      ]
+    }
+  },
+  "properties": {
+    "global_info": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "description": "Version of the schema, via semantic versioning"
+        },
+        "directory_version": {
+          "type": "string",
+          "description": "Version of the directory data, via semantic versioning or date-based versioning"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 date and time when the directory was last updated"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A description of the directory and its purpose"
+        }
+      },
+      "required": [
+        "schema_version",
+        "directory_version",
+        "last_updated",
+        "summary"
+      ]
+    },
+    "countries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/country"
+      },
+      "description": "List of countries in the directory, each with their own regions and associated information"
+    },
+    "meshcore": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/meshcore_node"
+          },
+          "description": "List of MeshCore nodes in the directory"
+        }
+      },
+      "required": [
+        "nodes"
+      ]
+    }
+  },
+  "required": [
+    "global_info",
+    "countries",
+    "meshcore"
+  ]
+}
